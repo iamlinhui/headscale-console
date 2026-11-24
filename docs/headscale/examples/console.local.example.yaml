@@ -1,0 +1,29 @@
+# 可提交模板：复制到实际配置位置并替换域名/路径；不包含真实凭据。
+# 本机运行的管理端配置；相对路径以本文件目录为基准。
+# 启动：go run . -config docs/headscale/web/config.yaml
+environment: development
+demo: false
+server:
+  host: 127.0.0.1
+  port: 3080
+  # Frontend hot-reload runs at 5173. For built-page preview change to 3080.
+  origin: http://127.0.0.1:3080
+  secure_cookie: false
+auth:
+  username: admin
+  password_hash: ""
+  password_hash_file: ../secrets/console-password.hash
+  session_ttl_seconds: 3600
+  login_rate_limit: 10
+  login_rate_window_seconds: 900
+headscale:
+  url: https://headscale.example.com
+  public_url: https://headscale.example.com
+  api_key: ""
+  api_key_file: ../secrets/headscale-api-key.secret
+  policy_mode: database
+configuration:
+  path: ../config/config.yaml
+  write_enabled: false
+  test_executable: ""
+  apply_executable: ""

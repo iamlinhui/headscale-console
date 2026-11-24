@@ -1,0 +1,29 @@
+# Copy to config.yaml, set your password hash, then run: go run .
+# Never commit config.yaml or secret files.
+environment: development
+demo: true
+server:
+  host: 127.0.0.1
+  port: 3080
+  origin: http://127.0.0.1:3080
+  secure_cookie: false
+auth:
+  username: admin
+  # Generate with: pnpm hash-password
+  password_hash: ""
+  # Or use a UTF-8 secret file; do not fill both values.
+  password_hash_file: ""
+  session_ttl_seconds: 3600
+  login_rate_limit: 10
+  login_rate_window_seconds: 900
+headscale:
+  url: http://headscale:9981
+  public_url: https://headscale.example.com
+  api_key: ""
+  api_key_file: ""
+  policy_mode: file
+configuration:
+  path: ""
+  write_enabled: false
+  test_executable: ""
+  apply_executable: ""

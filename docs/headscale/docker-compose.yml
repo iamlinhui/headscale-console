@@ -1,0 +1,65 @@
+# 唯一Docker部署入口：Headscale + Go管理端；Caddy沿用宿主现有配置。
+# 项目根目录：docker compose -f docs/headscale/docker-compose.yml pull headscale-console
+# 项目根目录：docker compose -f docs/headscale/docker-compose.yml up -d
+# 或进入本目录执行docker compose；不需要另一份Compose。
+# 不修改/清理Headscale原有data目录。发布前先备份并核对镜像版本。
+services:
+  headscale:
+    image: headscale/headscale:0.29.7
+    container_name: headscale
+    command: serve
+    restart: unless-stopped
+    volumes:
+      - type: bind
+        source: ./config
+        target: /etc/headscale
+        bind:
+          create_host_path: false
+      - ./data:/var/lib/headscale
+    ports:
+      - "127.0.0.1:9981:9981"
+      - "3478:3478/udp"
+
+  headscale-console:
+    # 从Docker Hub拉取已发布镜像；服务器部署不需要项目源码。
+    image: docker.io/promptness/headscale-console:${HEADSCALE_CONSOLE_TAG:-latest}
+    container_name: headscale-console
+    command: ["-config", "/app/config.yaml"]
+    restart: unless-stopped
+    stop_grace_period: 100s
+    # 宿主Caddy将headscale.holmes.cn/admin/反代到此端口。
+    ports:
+      - "127.0.0.1:9983:3080"
+    environment:
+      CONSOLE_ORIGIN: ${CONSOLE_ORIGIN:-https://headscale.holmes.cn}
+    volumes:
+      - type: bind
+        source: ./web/config.docker.yaml
+        target: /app/config.yaml
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ./config
+        target: /etc/headscale
+        read_only: true
+        bind:
+          create_host_path: false
+    secrets:
+      - console_password_hash
+      - headscale_api_key
+    depends_on:
+      - headscale
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+secrets:
+  console_password_hash:
+    file: ./secrets/console-password.hash
+  headscale_api_key:
+    file: ./secrets/headscale-api-key.secret

@@ -1,0 +1,31 @@
+# 可提交模板：复制到实际配置位置并替换域名/路径；不包含真实凭据。
+# 容器运行的Go管理端配置。由docker-compose.yml只读挂载。
+# 页面URL：https://headscale.example.com/admin/；Origin不含路径。
+# Caddy剥离/admin前缀后转发Go。CONSOLE_ORIGIN环境可覆盖此值。
+environment: production
+demo: false
+server:
+  host: 0.0.0.0
+  port: 3080
+  origin: https://headscale.example.com
+  secure_cookie: true
+auth:
+  username: admin
+  password_hash: ""
+  password_hash_file: /run/secrets/console_password_hash
+  session_ttl_seconds: 3600
+  login_rate_limit: 10
+  login_rate_window_seconds: 900
+headscale:
+  url: http://headscale:9981
+  public_url: https://headscale.example.com
+  api_key: ""
+  api_key_file: /run/secrets/headscale_api_key
+  # 要与Headscale config/config.yaml中的policy.mode一致。
+  policy_mode: database
+configuration:
+  # 与Headscale共享配置，只读查看DNS；不是历史副本。
+  path: /etc/headscale/config.yaml
+  write_enabled: false
+  test_executable: ""
+  apply_executable: ""

@@ -1,0 +1,47 @@
+# Dependencies
+node_modules/
+
+# Generated output
+build/
+internal/webassets/static/dist/
+playwright-report/
+coverage/
+
+# Secrets
+/config.yaml
+/config.local.yaml
+.env
+.env.*
+.secrets/
+**/secrets/
+/docs/headscale/data/
+/docs/headscale/.env
+*.secret
+*.hash
+
+# Actual deployment files: commit docs/headscale/examples instead
+/docs/headscale/config/config.yaml
+/docs/headscale/web/config.yaml
+/docs/headscale/web/config.docker.yaml
+/docs/headscale/Caddyfile
+
+# Archived experiments and generated history
+/archive/
+
+# Runtime databases, private keys and backups
+*.sqlite
+*.sqlite-*
+*.db
+*.db-*
+*.key
+*.pem
+*.p12
+*.pfx
+*.mesh-backup-*
+*.log
+*.exe
+
+
+# Editor
+.idea/
+*.iml

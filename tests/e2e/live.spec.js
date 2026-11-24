@@ -1,0 +1,16 @@
+import { test, expect } from '@playwright/test'
+test.use({baseURL:'http://127.0.0.1:3082'})
+async function login(page){await page.goto('/');await page.getByTestId('login-username').locator('input').fill('live-test');await page.getByTestId('login-password').locator('input').fill('Live-fixture-only!');await expect(page.getByTestId('captcha-image')).toBeVisible();await page.getByTestId('login-captcha').locator('input').fill('TEST');await page.getByTestId('login-submit').click();await expect(page.getByRole('heading',{name:'概览',exact:true})).toBeVisible()}
+async function nav(page,label){await page.locator('.sidebar .n-menu-item-content-header').filter({hasText:new RegExp(`^${label}$`)}).click()}
+test('Go同源认证到Headscale读取写入，秘密剥离与大ID不丢精度',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));await login(page)
+ await expect(page.getByRole('button',{name:'real-gateway',exact:true})).toBeVisible()
+ const data=await page.evaluate(async()=>await(await fetch('/api/devices')).json());expect(data.devices[0].id).toBe('9007199254740993');expect(JSON.stringify(data)).not.toContain('UPSTREAM_');expect(JSON.stringify(data)).not.toContain('INTEGRATION_MANAGEMENT_SECRET')
+ await nav(page,'设备');await page.getByRole('button',{name:'real-gateway',exact:true}).click();await page.getByTestId('edit-device').click();await page.getByTestId('edit-device-name').locator('input').fill('renamed-gateway');await page.getByTestId('save-device').click();await expect(page.locator('.drawer-device-heading h2')).toHaveText('renamed-gateway');await page.keyboard.press('Escape')
+ await nav(page,'路由');await page.getByRole('button',{name:'批准路由',exact:true}).click();await page.getByRole('button',{name:'确认批准',exact:true}).click();await expect(page.getByRole('button',{name:'撤销批准',exact:true})).toBeVisible()
+ await nav(page,'认证密钥');await page.getByTestId('create-key').click();await page.getByTestId('key-name').locator('input').fill('真实链路测试');await page.getByTestId('generate-key').click();await expect(page.getByTestId('new-key')).toContainText('LIVE_MOCK_ENROLLMENT_KEY');await page.getByRole('button',{name:'我已知晓'}).click();expect(await page.evaluate(()=>localStorage.length+sessionStorage.length)).toBe(0)
+ const keys=await page.evaluate(async()=>await(await fetch('/api/keys')).json());expect(JSON.stringify(keys)).not.toContain('LIVE_MOCK_ENROLLMENT_KEY')
+ await nav(page,'访问策略');await expect(page.locator('.policy-main')).toContainText('operator@');await page.getByRole('tab',{name:'策略源码'}).click();await page.getByTestId('policy-editor').locator('textarea').fill('{"grants":[]}');await page.getByTestId('validate-policy').click();await expect(page.locator('.n-message').last()).toContainText('通过')
+ await nav(page,'DNS');await expect(page.locator('.page-content')).toContainText(/未配置|不可用|无法|读取/);expect(await page.getByTestId('dns-preview').isDisabled()).toBe(true)
+ await nav(page,'设置');await expect(page.getByTestId('configured-url')).toContainText('127.0.0.1');await expect(page.locator('body')).not.toContainText('INTEGRATION_MANAGEMENT_SECRET');expect(errors).toEqual([])
+})

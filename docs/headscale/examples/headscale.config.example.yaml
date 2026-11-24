@@ -1,0 +1,125 @@
+# 可提交模板：复制到实际配置位置并替换域名/路径；不包含真实凭据。
+# Headscale服务端配置，容器路径 /etc/headscale/config.yaml。
+# 最终目标版本：Headscale v0.29.7。域名/端口/DERP/数据库保持原值。
+# 策略改为database用于Web在线发布；部署前必须备份并核对当前策略。
+# 外部HTTPS由宿主Caddy终止；配置改变后经configtest再确认重启。
+
+# ── 1. 服务地址与监听 ──
+server_url: https://headscale.example.com
+listen_addr: 0.0.0.0:9981
+metrics_listen_addr: 127.0.0.1:9090
+grpc_listen_addr: 127.0.0.1:50443
+grpc_allow_insecure: false
+
+# 保留原代理信任范围；用于真实来源IP日志，不是访问权限规则。
+# 宿主经Docker端口转发时来源可能是网桥gateway，不能凭空设成127.0.0.1。
+# 部署后核实Caddy->容器实际来源IP，再收窄为明确/32；9981已仅宿主loopback发布。
+trusted_proxies:
+  - 172.16.0.0/12
+  - 192.168.0.0/16
+  - 127.0.0.1/32
+
+# Noise 协议私钥路径 (Docker 容器内路径)
+noise:
+  private_key_path: /var/lib/headscale/noise_private.key
+
+# 分配的内网 IP 段 (建议保持默认的 CGNAT 范围)
+prefixes:
+  v4: 100.64.0.0/10
+  v6: fd7a:115c:a1e0::/48
+  allocation: sequential
+
+# DERP 中继服务器配置
+derp:
+  server:
+    enabled: true
+    region_id: 900
+    region_code: "headscale"
+    region_name: "Headscale Embedded DERP"
+    verify_clients: true
+    stun_listen_addr: "0.0.0.0:3478"
+    private_key_path: /var/lib/headscale/derp_server_private.key
+    automatically_add_embedded_derp_region: true
+    # STUN 对外公布的真实公网 IPv4(headscale.example.com 解析的那个)
+    ipv4: 198.51.100.10
+    # 没有公网 IPv6 就保持注释,切勿填示例值
+    # ipv6: ""
+  # 清空官方 derpmap,否则客户端仍会 fallback 到官方香港等节点
+  urls: []
+  paths: []
+  # 已无外部 url,关闭自动更新
+  auto_update_enabled: false
+  update_frequency: 24h
+
+disable_check_updates: false
+
+# 节点生命周期配置
+node:
+  expiry: 0
+  ephemeral:
+    inactivity_timeout: 30m
+  routes:
+    ha:
+      probe_interval: 10s
+      probe_timeout: 5s
+
+# 数据库配置 (Docker 容器内持久化路径)
+database:
+  type: sqlite
+  debug: false
+  gorm:
+    prepare_stmt: true
+    parameterized_queries: true
+    skip_err_record_not_found: true
+    slow_threshold: 1000
+  sqlite:
+    path: /var/lib/headscale/db.sqlite
+    write_ahead_log: true
+    wal_autocheckpoint: 1000
+
+# TLS 配置（宿主Caddy反代终止TLS，Headscale不自行申请证书）
+acme_url: https://acme-v02.api.letsencrypt.org/directory
+acme_email: ""
+tls_letsencrypt_hostname: ""
+tls_letsencrypt_cache_dir: /var/lib/headscale/cache
+tls_letsencrypt_challenge_type: HTTP-01
+tls_letsencrypt_listen: ":http"
+tls_cert_path: ""
+tls_key_path: ""
+
+# 日志配置
+log:
+  level: info
+  format: text
+
+# ── 访问策略（ACL / Grants） ──
+# database模式通过Headscale API保存；两份管理端配置已同步。
+# 本文件不包含ACL规则。首次迁移先读取数据库当前策略，再确认发布。
+# 不自动写入示例/拒绝全部策略，避免中断现有设备访问。
+policy:
+  mode: database
+
+# DNS 与 MagicDNS 配置
+dns:
+  magic_dns: true
+  base_domain: hs.internal
+  override_local_dns: false
+  # Headscale 0.28/0.29使用global结构；保留空列表，不擅自加入公共DNS。
+  nameservers:
+    global: []
+  search_domains: []
+  extra_records: []
+
+# Unix Socket 用于 CLI 本地通信
+unix_socket: /var/run/headscale/headscale.sock
+unix_socket_permission: "0770"
+
+# 其他功能开关
+logtail:
+  enabled: false
+
+taildrop:
+  enabled: true
+
+auto_update:
+  enabled: false

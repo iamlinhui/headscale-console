@@ -1,0 +1,16 @@
+import { test, expect } from '@playwright/test'
+test('admin子路径代理：资源、验证码、登录和注销保持同源',async({page})=>{
+ const errors=[];page.on('pageerror',e=>errors.push(e.message))
+ await page.goto('http://127.0.0.1:3083/admin')
+ await expect(page).toHaveURL('http://127.0.0.1:3083/admin/')
+ await expect(page.getByTestId('captcha-image')).toBeVisible()
+ await page.getByTestId('login-username').locator('input').fill('ui-test')
+ await page.getByTestId('login-password').locator('input').fill('E2E-fixture-only!')
+ await page.getByTestId('login-captcha').locator('input').fill('TEST')
+ const login=page.waitForResponse(r=>r.url().endsWith('/admin/api/auth/login'))
+ await page.getByTestId('login-submit').click();expect((await login).status()).toBe(200)
+ await expect(page.getByRole('heading',{name:'概览',exact:true})).toBeVisible()
+ await page.locator('.sidebar .n-menu-item-content-header').filter({hasText:/^设置$/}).click()
+ await page.getByTestId('logout').click();await expect(page.getByRole('heading',{name:'登录控制台'})).toBeVisible()
+ expect(errors).toEqual([])
+})

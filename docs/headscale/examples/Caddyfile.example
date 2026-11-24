@@ -1,0 +1,21 @@
+# 可提交模板：复制到实际配置位置并替换域名/路径；不包含真实凭据。
+@headscale host headscale.example.com
+handle @headscale {
+    # route保留书写顺序，避免handle/handle_path自动排序或其它匹配器干扰。
+    route {
+        @console path /admin
+        redir @console /admin/ 308
+
+        # /admin/、资源、/admin/api/...仅送Go管理端；剥离/admin前缀。
+        handle_path /admin/* {
+            reverse_proxy 127.0.0.1:9983
+        }
+
+        # 其它请求交Headscale，包括客户端注册、Noise、/api/v1与DERP。
+        handle {
+            reverse_proxy 127.0.0.1:9981 {
+                flush_interval -1
+            }
+        }
+    }
+}
