@@ -175,7 +175,7 @@ docker compose -f docs/headscale/docker-compose.yml up -d --no-deps headscale-co
 
 ### 有设备预授权密钥
 
-管理员在“认证密钥”中创建短时、单次设备 Key，或在“添加设备”向导生成；也可以用已有设备 Key生成接入命令。演示模式生成的 Key 无效。
+预授权密钥仅在“认证密钥”页面管理，适用于自动化或无需浏览器确认的接入；不属于“添加设备”表单。演示模式生成的 Key 无效。
 
 Windows / macOS 终端：
 
@@ -198,7 +198,7 @@ tailscale up --login-server=https://headscale.example.com --auth-key=YOUR_DEVICE
 tailscale login --login-server=https://headscale.example.com
 ```
 
-打开注册页面后按该实例指引完成；未配置OIDC时通常需要Headscale管理员批准。管理员在**服务器**核对 `headscale auth register --help` 后按注册页给出的 Auth ID 执行批准。本管理端目前没有完整的交互注册批准页面，可以使用服务器CLI。客户端允许VPN配置后会接入并出现在设备列表。
+客户端打开注册页面后，将完整的 `hskey-authreq-...` Auth ID交给管理员。Headscale 0.29.x可在管理端“添加设备”表单中粘贴该值、选择所属用户并确认注册，等同 `headscale auth register --auth-id ... --user ...`。客户端允许VPN配置后即可接入。Auth ID必须来自当前Headscale且未过期，不是预授权密钥或管理API Key；旧版本按服务器CLI帮助处理。
 
 Android也可在设置自定义服务器后从 Accounts 菜单选择 Use an auth key。iOS菜单可能因版本变化，不假定有同样的Key输入入口。官方操作参考：[Android](https://headscale.net/stable/usage/connect/android/)、[Apple](https://headscale.net/stable/usage/connect/apple/)、[Windows](https://headscale.net/stable/usage/connect/windows/)。
 

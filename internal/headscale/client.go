@@ -451,6 +451,8 @@ func (c *Client) serveHTTP(w http.ResponseWriter, r *http.Request) {
 			users = append(users, normalizeUser(u))
 		}
 		respond(w, 200, map[string]any{"users": users})
+	case path == "devices/register" && r.Method == "POST":
+		c.registerDevice(w, r, minor)
 	case path == "users" && r.Method == "POST":
 		c.createUser(w, r)
 	case len(parts) >= 2 && parts[0] == "devices" && validID(parts[1]):
@@ -539,7 +541,7 @@ func (c *Client) connection(w http.ResponseWriter, r *http.Request) {
 		fail(w, e)
 		return
 	}
-	respond(w, 200, map[string]any{"url": c.base.String(), "publicUrl": c.publicURL.String(), "apiKeyConfigured": true, "configured": true, "mode": "live", "policyMode": c.policyMode, "version": v, "connected": health.Database, "capabilities": map[string]bool{"read": health.Database, "write": health.Database, "policyCheck": health.Database && minor == 29, "policyWrite": health.Database && minor == 29 && c.policyMode == "database", "keys": health.Database}})
+	respond(w, 200, map[string]any{"url": c.base.String(), "publicUrl": c.publicURL.String(), "apiKeyConfigured": true, "configured": true, "mode": "live", "policyMode": c.policyMode, "version": v, "connected": health.Database, "capabilities": map[string]bool{"read": health.Database, "write": health.Database, "policyCheck": health.Database && minor == 29, "policyWrite": health.Database && minor == 29 && c.policyMode == "database", "keys": health.Database, "register": health.Database && minor == 29}})
 }
 func (c *Client) createUser(w http.ResponseWriter, r *http.Request) {
 	var b struct {

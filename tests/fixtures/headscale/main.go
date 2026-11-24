@@ -34,6 +34,15 @@ func main() {
 		switch r.URL.Path {
 		case "/version":
 			encode(map[string]string{"version": "0.29.5"})
+		case "/api/v1/auth/register":
+			var b map[string]string
+			_ = json.NewDecoder(r.Body).Decode(&b)
+			if b["authId"] != "hskey-authreq-VALIDTEST123" || b["user"] != "operator" {
+				w.WriteHeader(400)
+				encode(map[string]string{"message": "invalid auth request"})
+				return
+			}
+			encode(map[string]any{"node": node})
 		case "/api/v1/health":
 			encode(map[string]bool{"databaseConnectivity": true})
 		case "/api/v1/node":

@@ -73,8 +73,7 @@ test('Naive UI 页面、设备搜索编辑、路由审批、策略与密钥演�
   await page.getByTestId('save-device').click()
   await expect(page.locator('.drawer-device-heading h2')).toHaveText('jason-macbook-demo')
   await page.keyboard.press('Escape')
-  await page.getByTestId('add-device').click();await page.getByTestId('join-next').click()
-  await expect(page.getByTestId('join-command')).toContainText('DEMO_INVALID_KEY');await page.keyboard.press('Escape')
+  await page.getByTestId('add-device').click();await expect(page.getByTestId('register-auth-id')).toBeVisible();await expect(page.getByTestId('join-mode')).toHaveCount(0);await page.keyboard.press('Escape')
   await nav(page,'路由');await page.getByRole('button',{name:'批准路由',exact:true}).click();await page.getByRole('button',{name:'确认批准',exact:true}).click()
   await expect(page.getByRole('button',{name:'撤销批准',exact:true})).toHaveCount(3)
   await nav(page,'访问策略');await page.getByRole('tab',{name:'策略源码'}).click()
@@ -88,8 +87,8 @@ test('Naive UI 页面、设备搜索编辑、路由审批、策略与密钥演�
   for(const label of ['概览','设备','用户','路由','访问策略','DNS','认证密钥','设置']){await nav(page,label);await expect(page.locator('.page-heading h1')).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true)}
   expect(errors).toEqual([])
 })
-test('先创建密钥再接入设备，不创建第二枚密钥',async({page})=>{
- await login(page);await nav(page,'认证密钥');await page.getByTestId('create-key').click();await page.getByTestId('key-name').locator('input').fill('先建Key接入');await page.getByTestId('generate-key').click();const key=await page.getByTestId('new-key').textContent();await page.getByTestId('key-use-device').click();await expect(page.getByTestId('existing-auth-key').locator('input')).toHaveValue(key);let creations=0;page.on('request',r=>{if(r.url().endsWith('/api/keys')&&r.method()==='POST')creations++});await page.getByTestId('join-next').click();await expect(page.getByTestId('join-command')).toContainText(key);expect(creations).toBe(0);await page.keyboard.press('Escape');expect(await page.evaluate(()=>localStorage.length+sessionStorage.length)).toBe(0)
+test('添加设备与认证密钥入口分离',async({page})=>{
+ await login(page);await page.getByTestId('add-device').click();await expect(page.getByTestId('register-auth-id')).toBeVisible();await expect(page.getByTestId('existing-auth-key')).toHaveCount(0);await expect(page.getByTestId('join-mode')).toHaveCount(0);await page.keyboard.press('Escape');await nav(page,'认证密钥');await page.getByTestId('create-key').click();await page.getByTestId('key-name').locator('input').fill('独立密钥');await page.getByTestId('generate-key').click();await expect(page.getByTestId('new-key')).toContainText('DEMO_INVALID_');await expect(page.getByTestId('key-use-device')).toHaveCount(0)
 })
 test('统一导航标题、移除重复品牌与侧栏折叠',async({page})=>{
  await login(page)
